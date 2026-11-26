@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="12dp"
+            android:text="Status: Disconnected"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnScan"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Scan DSP" />
+
+            <Button
+                android:id="@+id/btnSync"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="Sync DSP" />
+
+            <Button
+                android:id="@+id/btnMute"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="Mute" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvVol"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:text="Volume: 20" />
+
+        <SeekBar
+            android:id="@+id/sbVol"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="63"
+            android:progress="20" />
+
+        <TextView
+            android:id="@+id/tvBass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="14dp"
+            android:text="Bass: 7" />
+
+        <SeekBar
+            android:id="@+id/sbBass"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="14"
+            android:progress="7" />
+
+        <TextView
+            android:id="@+id/tvTreble"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="14dp"
+            android:text="Treble: 7" />
+
+        <SeekBar
+            android:id="@+id/sbTreble"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="14"
+            android:progress="7" />
+
+        <TextView
+            android:id="@+id/tvBand1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="14dp"
+            android:text="EQ Band 1: 7" />
+
+        <SeekBar
+            android:id="@+id/sbBand1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="14"
+            android:progress="7" />
+
+        <TextView
+            android:id="@+id/tvLog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:text="Log: Ready"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+</ScrollView>
