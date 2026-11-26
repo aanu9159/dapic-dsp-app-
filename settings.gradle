@@ -1,0 +1,2 @@
+rootProject.name = "DapicDsp"
+include ':app'
