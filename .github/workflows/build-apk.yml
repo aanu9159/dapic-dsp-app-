@@ -18,15 +18,17 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
 
-      - name: Install Gradle
+      - name: Install Gradle 7.5.1
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gradle
+          curl -fsSL https://services.gradle.org/distributions/gradle-7.5.1-bin.zip -o gradle.zip
+          unzip -q gradle.zip -d /opt/gradle
+          echo "/opt/gradle/gradle-7.5.1/bin" >> $GITHUB_PATH
 
       - name: Build Debug APK
-        run: gradle assembleDebug --stacktrace
+        run: gradle assembleDebug --stacktrace --no-daemon
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: dapic-dsp-debug-apk
