@@ -1,6 +1,5 @@
 package com.dapic.dsp
 
-import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
@@ -104,7 +103,7 @@ object DapicProtocol {
         bytes.joinToString(" ") { String.format("%02X", it.toInt() and 0xFF) }
 }
 
-@SuppressLint("MissingPermission")
+@Suppress("MissingPermission")
 class DapicBleClient(
     context: Context,
     private val onConnected: (BluetoothDevice) -> Unit,
