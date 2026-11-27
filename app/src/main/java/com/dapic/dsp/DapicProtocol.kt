@@ -16,6 +16,14 @@ import android.os.Looper
 import java.util.UUID
 import java.util.concurrent.Executors
 
+data class DiscoveredBtDevice(
+    val device: BluetoothDevice,
+    val name: String,
+    val address: String,
+    val rssi: Int,
+    val isBonded: Boolean
+)
+
 object DapicProtocol {
     val SERVICE_UUID: UUID = UUID.fromString("0000aa81-0000-1000-8000-00805f9b34fb")
     val CHAR_DSP_UUID: UUID = UUID.fromString("0000aa81-0000-1000-8000-00805f9b34fb")
@@ -40,6 +48,16 @@ object DapicProtocol {
     const val CMD_GET_BALANCE_FADER: Int = 0x0B15
     const val CMD_SET_BALANCE_FADER: Int = 0x0B17
     const val CMD_SET_TONE: Int = 0x0B1B
+    const val CMD_SET_SOUNDFIELD: Int = 0x0B1F
+    const val CMD_SET_CHANNEL_GAIN: Int = 0x0B21
+    const val CMD_SET_CHANNEL_XOVER: Int = 0x0B23
+
+    val EQ_20_LABELS = arrayOf(
+        "32Hz", "45Hz", "63Hz", "90Hz", "125Hz",
+        "180Hz", "250Hz", "350Hz", "500Hz", "700Hz",
+        "1kHz", "1.4kHz", "2kHz", "2.8kHz", "4kHz",
+        "5.6kHz", "8kHz", "10kHz", "12.5kHz", "16kHz"
+    )
 
     fun buildFrame(cmd: Int, payload: ByteArray = ByteArray(0), useAdditiveSum: Boolean = false): ByteArray {
         val len = if (payload.size < 0) 0 else if (payload.size > 255) 255 else payload.size
@@ -71,11 +89,33 @@ object DapicProtocol {
         return frame
     }
 
-    fun setSingleEqBand(bandIndex: Int, value: Int): ByteArray =
-        buildFrame(CMD_SET_SINGLE_EQ_BAND, byteArrayOf(bandIndex.toByte(), value.toByte()))
+    fun setSingleEqBand(bandIndex1Based: Int, value: Int): ByteArray =
+        buildFrame(CMD_SET_SINGLE_EQ_BAND, byteArrayOf(bandIndex1Based.toByte(), value.toByte()))
 
     fun setTone(toneType: Int, value: Int): ByteArray =
         buildFrame(CMD_SET_TONE, byteArrayOf(toneType.toByte(), value.toByte()))
+
+    fun setBalanceFader(balance: Int, fader: Int): ByteArray =
+        buildFrame(CMD_SET_BALANCE_FADER, byteArrayOf(balance.toByte(), fader.toByte()))
+
+    fun setConcertHall(enabled: Boolean, mode: Int): ByteArray =
+        buildFrame(CMD_SET_SOUNDFIELD, byteArrayOf(if (enabled) 1 else 0, mode.toByte()))
+
+    fun setChannelGain(channelIndex1Based: Int, gain0to15: Int, muted: Boolean): ByteArray =
+        buildFrame(
+            CMD_SET_CHANNEL_GAIN,
+            byteArrayOf(channelIndex1Based.toByte(), if (muted) 0 else gain0to15.toByte(), if (muted) 1 else 0)
+        )
+
+    fun setChannelCrossover(channelIndex1Based: Int, freqHz: Int): ByteArray =
+        buildFrame(
+            CMD_SET_CHANNEL_XOVER,
+            byteArrayOf(
+                channelIndex1Based.toByte(),
+                ((freqHz ushr 8) and 0xFF).toByte(),
+                (freqHz and 0xFF).toByte()
+            )
+        )
 
     fun setVolume(value: Int, mode: Int = 0): ByteArray =
         buildFrame(CMD_SET_VOL, byteArrayOf(mode.toByte(), value.toByte()))
@@ -94,9 +134,17 @@ object DapicProtocol {
         return chunks
     }
 
-    fun isDapicDeviceName(name: String?): Boolean {
-        val upper = name?.toUpperCase() ?: return false
-        return upper.contains("ANGHUI") || upper.contains("SMARTBT")
+    fun parseHexString(input: String): ByteArray? {
+        val cleaned = input.replace(Regex("[^0-9A-Fa-f]"), "")
+        if (cleaned.isEmpty() || cleaned.length % 2 != 0) return null
+        val out = ByteArray(cleaned.length / 2)
+        var i = 0
+        while (i < cleaned.length) {
+            val byteVal = cleaned.substring(i, i + 2).toIntOrNull(16) ?: return null
+            out[i / 2] = byteVal.toByte()
+            i += 2
+        }
+        return out
     }
 
     fun toHex(bytes: ByteArray): String =
@@ -108,7 +156,9 @@ class DapicBleClient(
     context: Context,
     private val onConnected: (BluetoothDevice) -> Unit,
     private val onDisconnected: () -> Unit,
-    private val onNotifyBytes: (ByteArray) -> Unit
+    private val onNotifyBytes: (ByteArray) -> Unit,
+    private val onDeviceDiscovered: (DiscoveredBtDevice) -> Unit,
+    private val onStatusMessage: (String) -> Unit = {}
 ) {
     private val appContext = context.applicationContext
     private val bluetoothAdapter: BluetoothAdapter? =
@@ -120,13 +170,28 @@ class DapicBleClient(
     private var dspChar: BluetoothGattCharacteristic? = null
     private var isScanning = false
 
+    val isHwConnected: Boolean
+        get() = gatt != null && dspChar != null
+
+    private val scanTimeoutRunnable = Runnable {
+        if (isScanning) {
+            stopScan()
+            mainHandler.post { onStatusMessage("Scan finished") }
+        }
+    }
+
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val dev = result.device ?: return
-            if (DapicProtocol.isDapicDeviceName(dev.name)) {
-                stopScan()
-                connect(dev)
-            }
+            val devName = dev.name ?: result.scanRecord?.deviceName ?: "Unknown BT Device"
+            val item = DiscoveredBtDevice(
+                device = dev,
+                name = devName,
+                address = dev.address ?: "",
+                rssi = result.rssi,
+                isBonded = dev.bondState == BluetoothDevice.BOND_BONDED
+            )
+            mainHandler.post { onDeviceDiscovered(item) }
         }
     }
 
@@ -137,18 +202,30 @@ class DapicBleClient(
                 gatt.discoverServices()
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 dspChar = null
+                this@DapicBleClient.gatt?.close()
+                this@DapicBleClient.gatt = null
                 mainHandler.post { onDisconnected() }
             }
         }
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             if (status != BluetoothGatt.GATT_SUCCESS) return
-            val service = gatt.getService(DapicProtocol.SERVICE_UUID) ?: return
-            val characteristic = service.getCharacteristic(DapicProtocol.CHAR_DSP_UUID) ?: return
+            val service = gatt.getService(DapicProtocol.SERVICE_UUID)
+            val characteristic = service?.getCharacteristic(DapicProtocol.CHAR_DSP_UUID)
+                ?: gatt.services.flatMap { it.characteristics }.firstOrNull { char ->
+                    (char.properties and BluetoothGattCharacteristic.PROPERTY_WRITE) != 0 ||
+                        (char.properties and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0
+                }
+
+            if (characteristic == null) {
+                mainHandler.post { onStatusMessage("Connected (Audio-only / No DSP GATT char)") }
+                return
+            }
+
             dspChar = characteristic
             enableNotifications(gatt, characteristic)
 
-            service.getCharacteristic(DapicProtocol.CHAR_UART_UUID)?.let { uartChar ->
+            service?.getCharacteristic(DapicProtocol.CHAR_UART_UUID)?.let { uartChar ->
                 mainHandler.postDelayed({ enableNotifications(gatt, uartChar) }, 120L)
             }
 
@@ -173,14 +250,34 @@ class DapicBleClient(
         }
     }
 
-    fun startScan() {
-        val scanner = bluetoothAdapter?.bluetoothLeScanner ?: return
-        if (isScanning) return
+    fun getBondedDevices(): List<DiscoveredBtDevice> {
+        val bonded = bluetoothAdapter?.bondedDevices ?: return emptyList()
+        return bonded.map { dev ->
+            DiscoveredBtDevice(
+                device = dev,
+                name = dev.name ?: "Paired Device",
+                address = dev.address ?: "",
+                rssi = 0,
+                isBonded = true
+            )
+        }
+    }
+
+    fun startDiscoveryForPicker(timeoutMs: Long = 12000L) {
+        val scanner = bluetoothAdapter?.bluetoothLeScanner
+        if (scanner == null) {
+            onStatusMessage("BLE scanner unavailable")
+            return
+        }
+        if (isScanning) stopScan()
         isScanning = true
+        mainHandler.removeCallbacks(scanTimeoutRunnable)
+        mainHandler.postDelayed(scanTimeoutRunnable, timeoutMs)
         scanner.startScan(scanCallback)
     }
 
     fun stopScan() {
+        mainHandler.removeCallbacks(scanTimeoutRunnable)
         if (!isScanning) return
         isScanning = false
         bluetoothAdapter?.bluetoothLeScanner?.stopScan(scanCallback)
@@ -232,5 +329,6 @@ class DapicBleClient(
         gatt?.close()
         gatt = null
         dspChar = null
+        mainHandler.post { onDisconnected() }
     }
 }
