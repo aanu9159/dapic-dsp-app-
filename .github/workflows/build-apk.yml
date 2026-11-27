@@ -18,14 +18,19 @@ jobs:
           java-version: '11'
           distribution: 'temurin'
 
-      - name: Install Gradle 7.5.1
-        run: |
-          curl -fsSL https://services.gradle.org/distributions/gradle-7.5.1-bin.zip -o gradle.zip
-          unzip -q gradle.zip -d /opt/gradle
-          echo "/opt/gradle/gradle-7.5.1/bin" >> $GITHUB_PATH
-
       - name: Build Debug APK
-        run: gradle assembleDebug --stacktrace --no-daemon
+        run: |
+          set -e
+          curl -fsSL https://services.gradle.org/distributions/gradle-7.5.1-bin.zip -o gradle.zip
+          unzip -q gradle.zip
+          set +e
+          ./gradle-7.5.1/bin/gradle assembleDebug --no-daemon > build.log 2>&1
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "=== KEY FAILURE LINES ==="
+            grep -E "e:|error:|AAPT:|Caused by:|What went wrong:|Execution failed for task" build.log | tail -n 30
+            exit $EXIT_CODE
+          fi
 
       - name: Upload APK
         if: success()
