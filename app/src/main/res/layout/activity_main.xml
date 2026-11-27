@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:padding="12dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -13,9 +13,78 @@
             android:id="@+id/tvStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="12dp"
-            android:text="Status: Disconnected"
-            android:textSize="16sp"
+            android:paddingBottom="6dp"
+            android:text="Status: Disconnected (Software DSP Ready)"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <!-- Bluetooth Connection Bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnSelectDevice"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.3"
+                android:text="Select BT Device" />
+
+            <Button
+                android:id="@+id/btnClassicBt"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="Audio BT" />
+
+            <Button
+                android:id="@+id/btnDisconnect"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="Disconnect" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnSync"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Sync DSP" />
+
+            <Button
+                android:id="@+id/btnMute"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="Mute: OFF" />
+
+            <Button
+                android:id="@+id/btnSwFallback"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1.2"
+                android:text="SW DSP: AUTO" />
+        </LinearLayout>
+
+        <!-- Concert Hall & Soundfield Section -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp"
+            android:text="Concert Hall &amp; Soundfield"
             android:textStyle="bold" />
 
         <LinearLayout
@@ -24,35 +93,36 @@
             android:orientation="horizontal">
 
             <Button
-                android:id="@+id/btnScan"
+                android:id="@+id/btnConcertHall"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Scan DSP" />
+                android:layout_weight="1.3"
+                android:text="Concert Hall: OFF" />
 
             <Button
-                android:id="@+id/btnSync"
+                android:id="@+id/btnHallMode"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="4dp"
                 android:layout_weight="1"
-                android:text="Sync DSP" />
+                android:text="Mode: Hall" />
 
             <Button
-                android:id="@+id/btnMute"
+                android:id="@+id/btnLoudness"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="4dp"
                 android:layout_weight="1"
-                android:text="Mute" />
+                android:text="Bass Boost" />
         </LinearLayout>
 
+        <!-- Master Volume -->
         <TextView
             android:id="@+id/tvVol"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="16dp"
-            android:text="Volume: 20" />
+            android:paddingTop="12dp"
+            android:text="Master Volume: 20 / 63" />
 
         <SeekBar
             android:id="@+id/sbVol"
@@ -61,53 +131,357 @@
             android:max="63"
             android:progress="20" />
 
+        <!-- Left/Right & Front/Rear Balance/Fader -->
         <TextView
-            android:id="@+id/tvBass"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="14dp"
-            android:text="Bass: 7" />
+            android:paddingTop="10dp"
+            android:text="Left / Right &amp; Front / Rear Staging"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnCenterLR"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Center L/R" />
+
+            <Button
+                android:id="@+id/btnCenterFR"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="Center F/R" />
+
+            <Button
+                android:id="@+id/btnCenterAll"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="Center All" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvBalance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="6dp"
+            android:text="Left / Right Balance: 0 (Center)" />
 
         <SeekBar
-            android:id="@+id/sbBass"
+            android:id="@+id/sbBalance"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:max="14"
             android:progress="7" />
 
         <TextView
-            android:id="@+id/tvTreble"
+            android:id="@+id/tvFader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="14dp"
-            android:text="Treble: 7" />
+            android:paddingTop="6dp"
+            android:text="Front / Rear Fader: 0 (Center)" />
 
         <SeekBar
-            android:id="@+id/sbTreble"
+            android:id="@+id/sbFader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:max="14"
             android:progress="7" />
+
+        <!-- 4-Channel Separate Control -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="12dp"
+            android:text="4-Channel Separate Control (Gain &amp; Mute)"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnMuteFL"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="FL: ON" />
+
+            <Button
+                android:id="@+id/btnMuteFR"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="FR: ON" />
+
+            <Button
+                android:id="@+id/btnMuteRL"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="RL: ON" />
+
+            <Button
+                android:id="@+id/btnMuteRR"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="RR: ON" />
+        </LinearLayout>
 
         <TextView
-            android:id="@+id/tvBand1"
+            android:id="@+id/tvChFL"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="14dp"
-            android:text="EQ Band 1: 7" />
+            android:paddingTop="6dp"
+            android:text="CH1 Front-Left Gain: 10 / 15" />
 
         <SeekBar
-            android:id="@+id/sbBand1"
+            android:id="@+id/sbChFL"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:max="14"
-            android:progress="7" />
+            android:max="15"
+            android:progress="10" />
+
+        <TextView
+            android:id="@+id/tvChFR"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:text="CH2 Front-Right Gain: 10 / 15" />
+
+        <SeekBar
+            android:id="@+id/sbChFR"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="15"
+            android:progress="10" />
+
+        <TextView
+            android:id="@+id/tvChRL"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:text="CH3 Rear-Left Gain: 10 / 15" />
+
+        <SeekBar
+            android:id="@+id/sbChRL"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="15"
+            android:progress="10" />
+
+        <TextView
+            android:id="@+id/tvChRR"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:text="CH4 Rear-Right Gain: 10 / 15" />
+
+        <SeekBar
+            android:id="@+id/sbChRR"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="15"
+            android:progress="10" />
+
+        <!-- 4-Channel Frequency / Crossover Control -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="12dp"
+            android:text="4-Channel Frequency / Crossover Control"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnXoverFull"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Full Range" />
+
+            <Button
+                android:id="@+id/btnXover80"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="80Hz Cut" />
+
+            <Button
+                android:id="@+id/btnXover120"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="120Hz Cut" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvFreqFL"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="6dp"
+            android:text="CH1 FL High-Pass Freq: 80 Hz" />
+
+        <SeekBar
+            android:id="@+id/sbFreqFL"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="230"
+            android:progress="60" />
+
+        <TextView
+            android:id="@+id/tvFreqFR"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:text="CH2 FR High-Pass Freq: 80 Hz" />
+
+        <SeekBar
+            android:id="@+id/sbFreqFR"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="230"
+            android:progress="60" />
+
+        <TextView
+            android:id="@+id/tvFreqRL"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:text="CH3 RL High-Pass Freq: 80 Hz" />
+
+        <SeekBar
+            android:id="@+id/sbFreqRL"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="230"
+            android:progress="60" />
+
+        <TextView
+            android:id="@+id/tvFreqRR"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:text="CH4 RR Low/High-Pass Freq: 80 Hz" />
+
+        <SeekBar
+            android:id="@+id/sbFreqRR"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="230"
+            android:progress="60" />
+
+        <!-- 20-Band Graphic Equalizer -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="12dp"
+            android:text="20-Band Graphic Equalizer (32Hz - 16kHz)"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnEqFlat20"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Flat 20-EQ" />
+
+            <Button
+                android:id="@+id/btnEqBass20"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="Mega Bass" />
+
+            <Button
+                android:id="@+id/btnEqRock20"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="Clear V-EQ" />
+        </LinearLayout>
+
+        <!-- Dynamic container where all 20 EQ sliders are generated cleanly -->
+        <LinearLayout
+            android:id="@+id/llEq20Container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="6dp" />
+
+        <!-- Raw Hex & Log -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="12dp"
+            android:text="Raw Hex Frame / Diagnostics"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etHexCommand"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="5A 5A AA 81 0A 27 01 01 2D 48 48"
+            android:inputType="textNoSuggestions"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnSendHex"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Send Hex" />
+
+            <Button
+                android:id="@+id/btnClearLog"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:layout_weight="1"
+                android:text="Clear Log" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tvLog"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="16dp"
+            android:paddingTop="10dp"
             android:text="Log: Ready"
             android:textSize="12sp" />
 
