@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
 
     private var muted = false
     private var concertHallOn = false
-    private var hallModeIndex = 2 // 0=Small, 1=Medium, 2=Concert Hall, 3=Arena
+    private var hallModeIndex = 2
     private val hallModeNames = arrayOf("Small", "Medium", "Hall", "Arena")
 
     private var balanceVal = 7
@@ -166,10 +166,10 @@ class MainActivity : AppCompatActivity() {
                 setOnSeekBarChangeListener(simpleSeekListener { p ->
                     val db = p - 7
                     val sign = if (db > 0) "+" else ""
-                    tv.text = "Band $bandNum ($freqLabel): $sign$db dB ($p)"
+                    tv.text = "Band $bandNum ($freqLabel):$sign$db dB ($p)"
                     bleClient.sendFrame(DapicProtocol.setSingleEqBand(bandNum, p))
                     swDsp.setEq20Band(bandNum, p)
-                    appendLog("EQ B$bandNum ($freqLabel) -> $p")
+                    appendLog("EQ B$bandNum ($freqLabel) ->$p")
                 })
             }
 
@@ -242,7 +242,6 @@ class MainActivity : AppCompatActivity() {
             appendLog("Bass Boost applied (HW + SW)")
         }
 
-        // Balance & Fader Center Buttons
         findViewById<Button>(R.id.btnCenterLR).setOnClickListener {
             balanceVal = 7
             sbBalance.progress = 7
@@ -270,7 +269,6 @@ class MainActivity : AppCompatActivity() {
             appendLog("Staging centered (L/R + F/R)")
         }
 
-        // 4-Channel Individual Mute Buttons
         val chButtons = listOf(
             findViewById<Button>(R.id.btnMuteFL) to "FL",
             findViewById<Button>(R.id.btnMuteFR) to "FR",
@@ -283,16 +281,14 @@ class MainActivity : AppCompatActivity() {
                 chMuted[idx] = !chMuted[idx]
                 btn.text = if (chMuted[idx]) "$code: MUTE" else "$code: ON"
                 bleClient.sendFrame(DapicProtocol.setChannelGain(idx + 1, chGains[idx], chMuted[idx]))
-                appendLog("Channel $code muted = ${chMuted[idx]}")
+                appendLog("Channel $code muted =${chMuted[idx]}")
             }
         }
 
-        // 4-Channel Crossover Preset Buttons
         findViewById<Button>(R.id.btnXoverFull).setOnClickListener { applyAllChannelFreq(20) }
         findViewById<Button>(R.id.btnXover80).setOnClickListener { applyAllChannelFreq(80) }
         findViewById<Button>(R.id.btnXover120).setOnClickListener { applyAllChannelFreq(120) }
 
-        // 20-Band EQ Preset Buttons
         findViewById<Button>(R.id.btnEqFlat20).setOnClickListener {
             apply20BandCurve(IntArray(20) { 7 }, "Flat 20-EQ")
         }
@@ -365,175 +361,11 @@ class MainActivity : AppCompatActivity() {
             val (tv, prefix) = labelPair
             bar.setOnSeekBarChangeListener(simpleSeekListener { p ->
                 chGains[idx] = p
-                tv.text = "$prefix: $p / 15"
+                tv.text = "$prefix:$p / 15"
                 bleClient.sendFrame(DapicProtocol.setChannelGain(idx + 1, p, chMuted[idx]))
             })
         }
 
         val freqSliders = listOf(
             Triple(0, sbFreqFL, tvFreqFL to "CH1 FL High-Pass Freq"),
-            Triple(1, sbFreqFR, tvFreqFR to "CH2 FR High-Pass Freq"),
-            Triple(2, sbFreqRL, tvFreqRL to "CH3 RL High-Pass Freq"),
-            Triple(3, sbFreqRR, tvFreqRR to "CH4 RR Low/High-Pass Freq")
-        )
-        for ((idx, bar, labelPair) in freqSliders) {
-            val (tv, prefix) = labelPair
-            bar.setOnSeekBarChangeListener(simpleSeekListener { p ->
-                val hz = 20 + p
-                chFreqs[idx] = hz
-                tv.text = "$prefix: $hz Hz"
-                bleClient.sendFrame(DapicProtocol.setChannelCrossover(idx + 1, hz))
-                swDsp.applyCrossoverPreview(chFreqs[0], chFreqs[1], chFreqs[2], chFreqs[3])
-            })
-        }
-    }
-
-    private fun applyAllChannelFreq(hz: Int) {
-        val progress = (hz - 20).coerceIn(0, 230)
-        val bars = listOf(sbFreqFL, sbFreqFR, sbFreqRL, sbFreqRR)
-        val labels = listOf(
-            tvFreqFL to "CH1 FL High-Pass Freq",
-            tvFreqFR to "CH2 FR High-Pass Freq",
-            tvFreqRL to "CH3 RL High-Pass Freq",
-            tvFreqRR to "CH4 RR Low/High-Pass Freq"
-        )
-        for (i in 0 until 4) {
-            chFreqs[i] = hz
-            bars[i].progress = progress
-            labels[i].first.text = "${labels[i].second}: $hz Hz"
-            bleClient.sendFrame(DapicProtocol.setChannelCrossover(i + 1, hz))
-        }
-        swDsp.applyCrossoverPreview(hz, hz, hz, hz)
-        appendLog("4-Ch Crossover set to $hz Hz")
-    }
-
-    private fun apply20BandCurve(values: IntArray, name: String) {
-        for (i in 0 until 20) {
-            val v = values.getOrElse(i) { 7 }.coerceIn(0, 14)
-            val db = v - 7
-            val sign = if (db > 0) "+" else ""
-            eq20Sliders[i].progress = v
-            eq20Labels[i].text = "Band ${i + 1} (${DapicProtocol.EQ_20_LABELS[i]}): $sign$db dB ($v)"
-            bleClient.sendFrame(DapicProtocol.setSingleEqBand(i + 1, v))
-            swDsp.setEq20Band(i + 1, v)
-        }
-        appendLog("Applied 20-Band Preset: $name")
-    }
-
-    private fun openBluetoothDevicePicker() {
-        if (!hasAllBlePermissions()) {
-            ActivityCompat.requestPermissions(this, requiredBlePermissions(), REQ_BLE_PERMS)
-            return
-        }
-
-        val btManager = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-        val adapter: BluetoothAdapter? = btManager?.adapter
-        if (adapter == null) {
-            tvStatus.text = "Status: Bluetooth unavailable"
-            return
-        }
-        if (!adapter.isEnabled) {
-            try {
-                startActivityForResult(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), REQ_ENABLE_BT)
-            } catch (_: SecurityException) {
-                appendLog("ERR: Enable Bluetooth manually")
-            }
-            return
-        }
-
-        discoveredDevices.clear()
-        pickerDisplayList.clear()
-
-        for (bonded in bleClient.getBondedDevices()) {
-            discoveredDevices[bonded.address] = bonded
-            pickerDisplayList.add("${bonded.name} [Paired]\n${bonded.address}")
-        }
-
-        val adapterList = ArrayAdapter(this, android.R.layout.simple_list_item_1, pickerDisplayList)
-        pickerAdapter = adapterList
-
-        bleClient.startDiscoveryForPicker(12000L)
-
-        AlertDialog.Builder(this)
-            .setTitle("Select Bluetooth Device")
-            .setAdapter(adapterList) { _, which ->
-                bleClient.stopScan()
-                val selected = discoveredDevices.values.elementAtOrNull(which) ?: return@setAdapter
-                tvStatus.text = "Status: Connecting to ${selected.name}..."
-                appendLog("Selected: ${selected.name} (${selected.address})")
-                bleClient.connect(selected.device)
-            }
-            .setNeutralButton("Audio BT Settings") { _, _ ->
-                bleClient.stopScan()
-                startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
-            }
-            .setNegativeButton("Close") { _, _ ->
-                bleClient.stopScan()
-            }
-            .setOnDismissListener {
-                bleClient.stopScan()
-            }
-            .show()
-    }
-
-    private fun appendLog(line: String) {
-        val existing = tvLog.text.toString()
-        val lines = existing.split("\n").takeLast(12)
-        tvLog.text = (lines + line).joinToString("\n")
-    }
-
-    private fun requiredBlePermissions(): Array<String> {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            arrayOf(
-                Manifest.permission.BLUETOOTH_SCAN,
-                Manifest.permission.BLUETOOTH_CONNECT
-            )
-        } else {
-            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
-    }
-
-    private fun hasAllBlePermissions(): Boolean {
-        return requiredBlePermissions().all { perm ->
-            ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQ_BLE_PERMS) {
-            if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                openBluetoothDevicePicker()
-            } else {
-                tvStatus.text = "Status: Bluetooth permission denied"
-            }
-        }
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQ_ENABLE_BT && resultCode == RESULT_OK) {
-            openBluetoothDevicePicker()
-        }
-    }
-
-    private fun simpleSeekListener(onChange: (Int) -> Unit) =
-        object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                if (fromUser) onChange(progress)
-            }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        }
-
-    override fun onDestroy() {
-        bleClient.disconnect()
-        swDsp.release()
-        super.onDestroy()
-    }
-}
+            Triple
